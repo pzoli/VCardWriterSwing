@@ -66,11 +66,11 @@ public class SerialPortManager extends javax.swing.JDialog implements jssc.Seria
             dialog.tblPersons.setModel(model);
 
             // @Test Win
-            //File file = new File("C:\\Users\\pzoli\\Documents\\NetBeansProjects\\VCardWriterWithPN532\\docs\\dataForVCard.csv");
+            //File file = new File("C:\\Users\\pzoli\\Documents\\NetBeansProjects\\VCardWriterSwing\\docs\\dataForVCard.csv");
             // @Test Mac
-            //File file = new File("/Users/pzoli/development/ER302NFCReaderSwiftApp/docs/dataForVCard.csv");
+            //File file = new File("/Users/pzoli/NetBeansProjects/VCardWriterSwing/docs/dataForVCard.csv");
             // @Test Linux
-            //File file = new File("/home/pzoli/NetBeansProjects/VCardWriterWithPN532/docs/dataForVCard.csv");
+            //File file = new File("/home/pzoli/NetBeansProjects/VCardWriterSwing/docs/dataForVCard.csv");
             
             //importCSV(file, model);
             
