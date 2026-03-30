@@ -426,6 +426,7 @@ public class SerialPortManager extends javax.swing.JDialog implements jssc.Seria
                         SerialPort.PARITY_NONE);
                     int mask = SerialPort.MASK_RXCHAR;
                     serialPort.setEventsMask(mask);
+                    serialPort.setFlowControlMode(SerialPort.FLOWCONTROL_XONXOFF_IN | SerialPort.FLOWCONTROL_XONXOFF_OUT);
                     serialPort.addEventListener(this);
                     setState();
                     bout = new ByteArrayOutputStream();
@@ -496,17 +497,24 @@ public class SerialPortManager extends javax.swing.JDialog implements jssc.Seria
                 try {
                     String joinedString = '\r' + txtNameForClassic.getText()+";"+txtPhoneForClassic.getText()+";"+txtEmailFroClassic.getText()+ "\n";
                     byte[] data = joinedString.getBytes(Charset.forName("UTF-8"));
+                    serialPort.writeBytes(data);
+                    /*
                     for(int idx = 0;idx<data.length;idx+=BUFFER_SIZE) {
                         byte[] buff = Arrays.copyOfRange(data, idx, idx + BUFFER_SIZE);
                         serialPort.writeBytes(buff);
+                        
                         while(serialPort.getOutputBufferBytesCount() > 0) {
-                            Thread.sleep(1);
+                            Thread.sleep(10);
                         }
+                        /*
                         if (data.length >= 64 && (idx + BUFFER_SIZE) < data.length) {
                             Thread.sleep(DATA_SEND_DELAY);
-                        }
+                        } 
+                        
                     }
-                } catch ( SerialPortException | InterruptedException ex) {
+                    //*/
+                    
+                } catch ( SerialPortException ex) { // | InterruptedException
                     logger.log(java.util.logging.Level.SEVERE, null, ex);
                 }
                 return null;
