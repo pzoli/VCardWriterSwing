@@ -37,7 +37,7 @@ public class SerialPortManager extends javax.swing.JDialog implements jssc.Seria
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(SerialPort.class.getName());
     private int selectedRow = -1;
-    private static final int DATA_SEND_DELAY = 3000;
+    private static final int DATA_SEND_DELAY = 1000;
     private static final int BUFFER_SIZE = 20;
     
     public static void main(String[] args) {
@@ -68,11 +68,11 @@ public class SerialPortManager extends javax.swing.JDialog implements jssc.Seria
             // @Test Win
             //File file = new File("C:\\Users\\pzoli\\Documents\\NetBeansProjects\\VCardWriterSwing\\docs\\dataForVCard.csv");
             // @Test Mac
-            //File file = new File("/Users/pzoli/NetBeansProjects/VCardWriterSwing/docs/dataForVCard.csv");
+            File file = new File("/Users/pzoli/NetBeansProjects/VCardWriterSwing/docs/dataForVCard.csv");
             // @Test Linux
             //File file = new File("/home/pzoli/NetBeansProjects/VCardWriterSwing/docs/dataForVCard.csv");
             
-            //importCSV(file, model);
+            importCSV(file, model);
             
             dialog.tblPersons.getSelectionModel().addListSelectionListener(e -> {
                 if (!e.getValueIsAdjusting()) {
@@ -187,7 +187,9 @@ public class SerialPortManager extends javax.swing.JDialog implements jssc.Seria
     }
 
     public void defaultMessageProcessor(String value) {
-        log(value);
+        String val = value.replaceAll(Byte.toString((byte)0x13), "");
+        val = val.replaceAll(Byte.toString((byte)0x11),"");
+        log(val);
     }
     
     private void log(String msg) {
@@ -506,7 +508,6 @@ public class SerialPortManager extends javax.swing.JDialog implements jssc.Seria
                         while(serialPort.getOutputBufferBytesCount() > 0) {
                             Thread.sleep(10);
                         }
-                        /*
                         if (data.length >= 64 && (idx + BUFFER_SIZE) < data.length) {
                             Thread.sleep(DATA_SEND_DELAY);
                         } 
