@@ -37,8 +37,17 @@ public class SerialPortManager extends javax.swing.JDialog implements jssc.Seria
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(SerialPort.class.getName());
     private int selectedRow = -1;
-    private static final int DATA_SEND_DELAY = 1000;
-    private static final int BUFFER_SIZE = 20;
+    
+    private static final int BUFFER_SIZE = 63;
+    private int idx = 0;
+
+    private SerialPort serialPort;
+    private ByteArrayOutputStream bout;   
+    private Consumer<String> messageProcessor;
+    SwingWorker<Void, Void> worker;
+    byte[] rawData;
+    byte[] data;
+
     
     public static void main(String[] args) {
         try {
@@ -68,11 +77,11 @@ public class SerialPortManager extends javax.swing.JDialog implements jssc.Seria
             // @Test Win
             //File file = new File("C:\\Users\\pzoli\\Documents\\NetBeansProjects\\VCardWriterSwing\\docs\\dataForVCard.csv");
             // @Test Mac
-            File file = new File("/Users/pzoli/NetBeansProjects/VCardWriterSwing/docs/dataForVCard.csv");
+            //File file = new File("/Users/pzoli/NetBeansProjects/VCardWriterSwing/docs/dataForVCard.csv");
             // @Test Linux
             //File file = new File("/home/pzoli/NetBeansProjects/VCardWriterSwing/docs/dataForVCard.csv");
             
-            importCSV(file, model);
+            //importCSV(file, model);
             
             dialog.tblPersons.getSelectionModel().addListSelectionListener(e -> {
                 if (!e.getValueIsAdjusting()) {
@@ -168,10 +177,6 @@ public class SerialPortManager extends javax.swing.JDialog implements jssc.Seria
             dialog.setVisible(true);
         });
     }
-
-    private SerialPort serialPort;
-    private ByteArrayOutputStream bout;   
-    private Consumer<String> messageProcessor;
     
     public SerialPortManager(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
@@ -483,8 +488,6 @@ public class SerialPortManager extends javax.swing.JDialog implements jssc.Seria
         }
     }//GEN-LAST:event_btnImportCSVFileActionPerformed
 
-    SwingWorker<Void, Void> worker;
-    
     private void btnUploadActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnUploadActionPerformed
         if (serialPort == null) { 
             return;
@@ -498,23 +501,10 @@ public class SerialPortManager extends javax.swing.JDialog implements jssc.Seria
                 setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
                 try {
                     String joinedString = '\r' + txtNameForClassic.getText()+";"+txtPhoneForClassic.getText()+";"+txtEmailFroClassic.getText()+ "\n";
-                    byte[] data = joinedString.getBytes(Charset.forName("UTF-8"));
-                    serialPort.writeBytes(data);
-                    /*
-                    for(int idx = 0;idx<data.length;idx+=BUFFER_SIZE) {
-                        byte[] buff = Arrays.copyOfRange(data, idx, idx + BUFFER_SIZE);
-                        serialPort.writeBytes(buff);
-                        
-                        while(serialPort.getOutputBufferBytesCount() > 0) {
-                            Thread.sleep(10);
-                        }
-                        if (data.length >= 64 && (idx + BUFFER_SIZE) < data.length) {
-                            Thread.sleep(DATA_SEND_DELAY);
-                        } 
-                        
-                    }
-                    //*/
-                    
+                    rawData = joinedString.getBytes(Charset.forName("UTF-8"));
+                    idx = 0;
+                    writeBuffer();
+                  
                 } catch ( SerialPortException ex) { // | InterruptedException
                     logger.log(java.util.logging.Level.SEVERE, null, ex);
                 }
@@ -546,6 +536,18 @@ public class SerialPortManager extends javax.swing.JDialog implements jssc.Seria
         }
     }//GEN-LAST:event_btnFormatActionPerformed
 
+    private void writeBuffer() throws SerialPortException {
+        try {
+            int end = Math.min(idx + BUFFER_SIZE, rawData.length);
+            byte[] buff = Arrays.copyOfRange(rawData, idx, end);
+            if (buff.length > 0) {
+                serialPort.writeBytes(buff);
+            }
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            
+        }
+    }
+
     @Override
     public void serialEvent(SerialPortEvent event) {
         if (event.isRXCHAR()) {
@@ -555,8 +557,26 @@ public class SerialPortManager extends javax.swing.JDialog implements jssc.Seria
                 try {
                     byte[] buffer = serialPort.readBytes(count);
                     bout.write(buffer);
-                    byte[] data = bout.toByteArray();
+                    data = bout.toByteArray();
                     //log(new String(buffer), false);
+
+                    int tabPos =  IntStream.range(0, data.length)
+                        .filter(i -> data[i] == '\t')
+                        .findFirst()
+                        .orElse(-1);
+                    
+                    if (tabPos != -1) {
+                        idx += BUFFER_SIZE;
+                        writeBuffer();
+
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        IntStream.range(0, data.length)
+                                .map(i -> data[i])
+                                .filter(b -> b != '\t')
+                                .forEach(baos::write);
+                        data = baos.toByteArray();
+                    }
+
                     int newLinePos =  IntStream.range(0, data.length)
                         .filter(i -> data[i] == '\n')
                         .findFirst()
